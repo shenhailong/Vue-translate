@@ -8,5 +8,5 @@ if(!fs.existsSync('dist')){
 // (2) 倒入config的配置 去看config.js
 
 let builds = require('./config').getAllBuilds()
-// console.log(require('./config').getAllBuilds)
-// console.log(builds)
+console.log(require('./config').getAllBuilds)
+console.log(builds)
