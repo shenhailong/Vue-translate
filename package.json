@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "node scripts/build.js"
   },
   "repository": {
     "type": "git",
@@ -15,5 +16,10 @@
   "bugs": {
     "url": "https://github.com/shenhailong/Vue-translate/issues"
   },
-  "homepage": "https://github.com/shenhailong/Vue-translate#readme"
+  "homepage": "https://github.com/shenhailong/Vue-translate#readme",
+  "devDependencies": {
+    "webpack": "^4.10.2",
+    "webpack-cli": "^3.0.4",
+    "webpack-command": "^0.2.1"
+  }
 }
