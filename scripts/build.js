@@ -1,5 +1,6 @@
 const fs = require('fs') // 文件系统进行交互
 const path = require('path')
+const zlib = require('zlib')
 const rollup = require('rollup') // 打包工具 http://www.rollupjs.com/
 const uglify = require('uglify-js') // 压缩js 生产环境用
 //（1） 判断根目录下是否有dist文件夹，没有就创建一个
@@ -37,7 +38,12 @@ function build(builds) {
   let built = 0
   const total = builds.length
   const next = () => {
-    buildEntry(builds[built])
+    buildEntry(builds[built]).then(() => {
+      built++
+      if (built < total) {
+        next()
+      }
+    }).catch(logError)
   }
   next()
 }
@@ -56,12 +62,19 @@ function buildEntry(config) {
       // bundle.generate() 函数返回一个 Promise，
       bundle.generate(output)
     ).then(({
-      code,
-      map
+      code
     }) => {
       if (isProd) {
+        var minified = (banner ? banner + '\n' : '') + uglify.minify(code, {
+          output: {
+            ascii_only: true // ???
+          },
+          compress: {
+            pure_funcs: ['makeMap'] // ???
+          }
+        }).code
         // 待解
-        return write(file, code)
+        return write(file, minified, true)
       } else {
         return write(file, code)
       }
@@ -71,10 +84,23 @@ function buildEntry(config) {
 function write(dest, code, zip) {
   return new Promise((resolve, reject) => {
     function report(extra) {
+      // path.relative() 方法返回从 from 到 to 的相对路径（基于当前工作目录）
+      // process cwd() 方法返回 Node.js 进程当前工作的目录
+      console.log(blue(path.relative(process.cwd(), dest)) + ' ' + getSize(code) + (extra || ''))
       resolve()
     }
     fs.writeFile(dest, code, err => {
-
+      if (err) return reject(err) // 如果有error
+      // 如果是压缩
+      if (zip) {
+        // ???
+        zlib.gzip(code, (err, zipped) => {
+          if (err) return reject(err)
+          report(' (gzipped: ' + getSize(zipped) + ')')
+        })
+      } else {
+        report()
+      }
     })
   })
 }
@@ -87,4 +113,8 @@ function getSize(code) {
 // node js 控制颜色输出
 function blue(str) {
   return '\x1b[1m\x1b[34m' + str + '\x1b[39m\x1b[22m'
+}
+
+function logError(e) {
+  console.log(e)
 }

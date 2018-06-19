@@ -26,7 +26,8 @@
     "uglify-js": "^3.4.0",
     "webpack": "^4.10.2",
     "webpack-cli": "^3.0.4",
-    "webpack-command": "^0.2.1"
+    "webpack-command": "^0.2.1",
+    "zlib": "^1.0.5"
   },
   "dependencies": {}
 }

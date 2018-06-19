@@ -32,6 +32,7 @@ const resolve = p => {
 // http://www.rollupjs.com/
 const builds = {
   // 没有压缩的基本的Vue。属于开发模式
+  // Runtime+compiler development build (Browser)
   'web-full-dev': {
     entry: resolve('web/entry-runtime-with-compiler.js'), // 入口文件
     dest: resolve('dist/vue.js'), // 目标文件
@@ -41,7 +42,17 @@ const builds = {
       he: './entity-decoder'
     }, // ???
     banner
-  }
+  },
+  // 压缩的生产版本
+  // Runtime+compiler production build  (Browser)
+  'web-full-prod': {
+    entry: resolve('web/entry-runtime-with-compiler.js'),
+    dest: resolve('dist/vue.min.js'),
+    format: 'umd',
+    env: 'production',
+    alias: { he: './entity-decoder' },
+    banner
+  },
 }
 // 更改成 rollup 规定的格式
 // http://www.rollupjs.com/big-list-of-options/
@@ -58,7 +69,7 @@ function genConfig(name) {
         __VERSION__: version
       }),
       flow(),
-      buble(),
+      buble(), // babel 作用
       alias(Object.assign({}, aliases, opts.alias))
     ].concat(opts.plugins || []), // 插件
     // 输出
