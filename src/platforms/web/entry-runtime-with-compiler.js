@@ -1,1 +1,1 @@
-alert(4)
+function a(){}
