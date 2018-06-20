@@ -4,15 +4,36 @@
  * Released under the MIT License.
  */
 (function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? factory() :
+  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
   typeof define === 'function' && define.amd ? define(factory) :
-  (factory());
+  (global.Vue = factory());
 }(this, (function () { 'use strict';
 
-  var a = function () {
-    console.log(1);
-  };
+  /*  */
 
-  a();
+  var uid = 0; // 为了区分创建不同实例的标志
+  function initMixin (Vue) {
+    Vue.prototype._init = function(options) {
+      var vm = this; // vm 就是实例本身 this
+      // a uid
+      vm._uid = uid++; // 每次创建新实例 +1
+      /* istanbul ignore if */ //？？？
+      // 开发环境性能测试
+      
+    };
+  }
+
+  // import { warn } from '../util/index' // 警告
+  function Vue(options) {
+    this._init(options);
+  }
+
+  initMixin(Vue);
+
+  /*  */
+
+  /*  */
+
+  return Vue;
 
 })));

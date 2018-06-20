@@ -10,3 +10,11 @@ npm run  build  --> node scripts/build.js
 然后运行  npm run flow
 https://flow.org/en/docs/install/
 <p>按照教程安装</p>
+
+## 第三步 添加eslint
+.eslintignore 文件是不需要检验的文件
+
+## 正式开始写Vue了😄
+
+1、先从Vue-translate/src/platforms/web/entry-runtime-with-compiler.js 一直找到 Vue-translate/src/core/instance/index.js Vue
+2、先初始化
