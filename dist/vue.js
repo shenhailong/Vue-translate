@@ -11,15 +11,13 @@
 
   /*  */
 
+  /*  */
   var uid = 0; // 为了区分创建不同实例的标志
   function initMixin (Vue) {
     Vue.prototype._init = function(options) {
       var vm = this; // vm 就是实例本身 this
       // a uid
       vm._uid = uid++; // 每次创建新实例 +1
-      /* istanbul ignore if */ //？？？
-      // 开发环境性能测试
-      
     };
   }
 

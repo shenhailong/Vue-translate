@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "node scripts/build.js",
-    "flow": "flow"
+    "flow": "flow check",
+    "flow:no" : "./node_modules/.bin/babel src/ -d withoutFlow/"
   },
   "repository": {
     "type": "git",
