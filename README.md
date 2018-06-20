@@ -2,8 +2,8 @@
 ## 说明 ？？？ 代表暂时未知
 
 ## 执行方法说明
-1. npm run build //  打包
-2. npm run flow    // flow 检测
+1. npm run build // 打包
+2. npm run flow // flow 检测
 3. npm run flow:no // 去掉flow后的文件样式
 ## 第一步 先从build入手
 npm run  build  --> node scripts/build.js
