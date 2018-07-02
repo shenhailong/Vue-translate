@@ -1,6 +1,8 @@
 一个重现vue源码项目
 ## 说明 ？？？ 代表暂时未知
 
+#写到的位置
+
 ## 执行方法说明
 1. npm run build // 打包
 2. npm run flow // flow 检测

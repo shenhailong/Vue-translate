@@ -1,6 +1,9 @@
 /* @flow */
-
-
+/*
+ * 文件说明：相关基本配置
+ * 
+ */
+// flow语法相关--> https://flow.org/en/docs/types/modules/
 export type Config = {
   performance: boolean;
 }
@@ -9,5 +12,5 @@ export default ({
   /**
    * Whether to record perf // 是否记录性能
    */
-  performance: 2,
+  performance: false,
 }: Config)
