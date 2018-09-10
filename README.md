@@ -25,3 +25,6 @@ https://flow.org/en/docs/install/
 
 <p>1、先从Vue-translate/src/platforms/web/entry-runtime-with-compiler.js 一直找到 Vue-translate/src/core/instance/index.js Vue</p>
 <p>2、先初始化</p>
+
+
+## 写到的位置，生命周期

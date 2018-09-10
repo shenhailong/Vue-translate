@@ -1,6 +1,11 @@
 /* @flow */
 import config from '../config' // 相关配置
-import { mergeOptions } from '../util/index'
+import { initLifecycle } from './lifecycle'
+import { initEvents } from './events'
+import { initRender } from './render'
+import {
+  mergeOptions
+} from '../util/index'
 import {
   mark,
   measure
@@ -29,9 +34,31 @@ export function initMixin(Vue: Class < Component > ) {
 
     } else {
       // 合并option
-      vm.$options = mergeOptions(resolveConstructorOptions(vm.constructor))
+      vm.$options = mergeOptions(
+        resolveConstructorOptions(vm.constructor),
+        options || {},
+        vm
+      )
     }
+
+    /* istanbul ignore else */
+    if (process.env.NODE_ENV !== 'production') {
+      // initProxy(vm) // ???
+    } else {
+      vm._renderProxy = vm
+    }
+    // expose real self
+    vm._self = vm
+    initLifecycle(vm) // ???
+    initEvents(vm) // ???
+    initRender(vm) // ???
   }
 }
 
-export function resolveConstructorOptions (){}
+export function resolveConstructorOptions(Ctor: Class < Component > ) {
+  // ???
+  let options = Ctor.options
+  console.log(Ctor)
+  console.log(options)
+  return options
+}

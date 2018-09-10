@@ -93,4 +93,9 @@ function genConfig(name) {
   return config
 }
 
-exports.getAllBuilds = () => Object.keys(builds).map(genConfig)
+if (process.env.TARGET) {
+  module.exports = genConfig(process.env.TARGET)
+} else {
+  exports.getBuild = genConfig
+  exports.getAllBuilds = () => Object.keys(builds).map(genConfig)
+}
