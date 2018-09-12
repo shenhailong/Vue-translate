@@ -12,10 +12,29 @@
     <!-- <script src="./dist/vue.min.js"></script> -->
     <script>
       var a = new Vue({
-        el: '#app'
+        el: '#app',
+        props: {
+          aa: {
+            type: Number,
+            default: 8
+          }
+        },
+        data: function() {
+          return {
+            a: '1',
+            b: {
+              c: '1'
+            }
+          }
+        }
       })
-      console.log(a)
-
+      // var b = new Vue(function() {
+      //   options: {
+      //     a: 999
+      //   }
+      // })
+      // console.log(a)
+      // console.log(b)
     </script>
   </body>
 </html>

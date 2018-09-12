@@ -1,6 +1,6 @@
 一个重现vue源码项目
 ## 说明 ？？？ 代表暂时未知
-
+## 说明 ^_^   代表新理解
 #写到的位置
 
 ## 执行方法说明
@@ -25,6 +25,6 @@ https://flow.org/en/docs/install/
 
 <p>1、先从Vue-translate/src/platforms/web/entry-runtime-with-compiler.js 一直找到 Vue-translate/src/core/instance/index.js Vue</p>
 <p>2、先初始化</p>
-
+<p>3. 写到resolveConstructorOptions 这个时候就需要constructor.options,这时需要去core/index.js 写initGlobalAPI</p>
 
 ## 写到的位置，生命周期

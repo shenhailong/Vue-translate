@@ -1,6 +1,7 @@
 /* @flow */
 import config from '../config' // 相关配置
 import { initLifecycle } from './lifecycle'
+import { initProxy } from './proxy'
 import { initEvents } from './events'
 import { initRender } from './render'
 import {
@@ -43,7 +44,7 @@ export function initMixin(Vue: Class < Component > ) {
 
     /* istanbul ignore else */
     if (process.env.NODE_ENV !== 'production') {
-      // initProxy(vm) // ???
+      initProxy(vm) // ???
     } else {
       vm._renderProxy = vm
     }
@@ -58,7 +59,7 @@ export function initMixin(Vue: Class < Component > ) {
 export function resolveConstructorOptions(Ctor: Class < Component > ) {
   // ???
   let options = Ctor.options
-  console.log(Ctor)
-  console.log(options)
+  // console.log(Ctor)
+  // console.log(options)
   return options
 }

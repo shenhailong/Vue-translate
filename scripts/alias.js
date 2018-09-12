@@ -9,5 +9,7 @@ const path = require('path') // 用于处理文件与目录的路径
 // 返回: <string>
 const resolve = p => path.resolve(__dirname, '../', p)
 module.exports = {
-  web: resolve('src/platforms/web') // 我的Mac文件地址 /Users/dragon/MyProject/Vue学习/Vue-translate/src/platforms/web
+  web: resolve('src/platforms/web'), // 我的Mac文件地址 /Users/dragon/MyProject/Vue学习/Vue-translate/src/platforms/web
+  shared: resolve('src/shared'),
+  core: resolve('src/core')
 }
