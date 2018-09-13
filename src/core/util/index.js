@@ -1,3 +1,5 @@
 export * from './options'
 export * from './debug'
+export * from './lang'
+export * from './env'
 export * from 'shared/util'

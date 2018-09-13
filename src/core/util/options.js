@@ -49,9 +49,7 @@ if (process.env.NODE_ENV !== 'production') {
  * ???
  */
 function mergeData (to: Object, from: ?Object): Object {
-  console.log(9999999)
   if (!from) return to
-  console.log(88)
   let key, toVal, fromVal
   const keys = Object.keys(from)
   for (let i = 0; i < keys.length; i++) {

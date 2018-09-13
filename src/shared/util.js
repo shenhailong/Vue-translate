@@ -6,7 +6,15 @@
  */
 export function noop(a ? : any, b ? : any, c ? : any) {}
 
-
+/**
+ * Quick object check - this is primarily used to tell
+ * Objects from primitive values when we know the value
+ * is a JSON-compliant type.
+ * 快速对象检查-当我们知道值是符合JSON的类型时，它主要用于告诉对象与原始值
+ */
+export function isObject (obj: mixed): boolean %checks {
+  return obj !== null && typeof obj === 'object'
+}
 
 /**
  * Mix properties into target object.

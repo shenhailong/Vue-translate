@@ -30,6 +30,30 @@
     performance: false,
   });
 
+  /**
+   * A dep is an observable that can have multiple
+   * directives subscribing to it.
+   * DEP是可观察的，可以具有订阅它的多个指令 ???
+   */
+
+  var Dep = function Dep () {};
+
+  // the current target watcher being evaluated.
+  // this is globally unique because there could be only one
+  // watcher being evaluated at any time.
+  // 正在评估的当前目标观察员。这是全球唯一的，因为在任何时候只有一个观察者被评估
+  Dep.target = null;
+  var targetStack = [];
+
+  function pushTarget (_target) {
+    if (Dep.target) { targetStack.push(Dep.target); }
+    Dep.target = _target;
+  }
+
+  function popTarget () {
+    Dep.target = targetStack.pop();
+  }
+
   /*  */
   // ???
   function initLifecycle(vm) {
@@ -56,6 +80,27 @@
     vm._isBeingDestroyed = false;
   }
 
+  function callHook (vm, hook) {
+    // #7573 disable dep collection when invoking lifecycle hooks
+    // 当调用生命周期挂钩时，第7573步禁用DEP集合
+    // ???
+    pushTarget();
+    var handlers = vm.$options[hook];
+    if (handlers) {
+      for (var i = 0, j = handlers.length; i < j; i++) {
+        try {
+          handlers[i].call(vm);
+        } catch (e) {
+          handleError(e, vm, (hook + " hook"));
+        }
+      }
+    }
+    if (vm._hasHookEvent) {
+      vm.$emit('hook:' + hook);
+    }
+    popTarget();
+  }
+
   // ???
   var initProxy;
   {
@@ -65,16 +110,8 @@
   }
 
   /*  */
-  function initEvents (vm) {
-    vm._events = Object.create(null);
-    vm._hasHookEvent = false; // ???
-  }
 
-  /*  */
-  function initRender(vm) {
-    vm._vnode = null; // the root of the child tree
-    vm._staticTrees = null; // v-once cached trees
-  }
+  var VNode = function VNode () {};
 
   /*  */
   /**
@@ -84,7 +121,15 @@
    */
   function noop(a  , b  , c  ) {}
 
-
+  /**
+   * Quick object check - this is primarily used to tell
+   * Objects from primitive values when we know the value
+   * is a JSON-compliant type.
+   * 快速对象检查-当我们知道值是符合JSON的类型时，它主要用于告诉对象与原始值
+   */
+  function isObject (obj) {
+    return obj !== null && typeof obj === 'object'
+  }
 
   /**
    * Mix properties into target object.
@@ -182,9 +227,7 @@
    * ???
    */
   function mergeData (to, from) {
-    console.log(9999999);
     if (!from) { return to }
-    console.log(88);
     var key, toVal, fromVal;
     var keys = Object.keys(from);
     for (var i = 0; i < keys.length; i++) {
@@ -418,12 +461,251 @@
   }
 
   /*  */
+
+  /**
+   * Check if a string starts with $ or _
+   * 检查一个字符串是否以$/_开头
+   * 检查保留
+   */
+  function isReserved (str) {
+    var c = (str + '').charCodeAt(0);
+    return c === 0x24 || c === 0x5F
+  }
+
+
+
+  /**
+   * Define a property.
+   */
+  function def (obj, key, val, enumerable) {
+    console.log(val);
+    Object.defineProperty(obj, key, {
+      value: val,
+      enumerable: !!enumerable,
+      writable: true,
+      configurable: true
+    });
+  }
+
+  /*  */
   /**
    * 文件说明：环境检测
    * 
   */
   // Browser environment sniffing
   var inBrowser = typeof window !== 'undefined';
+
+  // this needs to be lazy-evaled because vue may be required before
+  // 由于需要VUE，所以需要先对此进行评估
+  // vue-server-renderer can set VUE_ENV
+  var _isServer;
+  var isServerRendering = function () {
+    if (_isServer === undefined) {
+      /* istanbul ignore if */
+      // ???
+      if (!inBrowser && !inWeex && typeof global !== 'undefined') {
+        // detect presence of vue-server-renderer and avoid
+        // Webpack shimming the process
+        // 检测VUE服务器渲染器的存在并避免Webpack shimming进程
+        _isServer = global['process'].env.VUE_ENV === 'server';
+      } else {
+        _isServer = false;
+      }
+    }
+    return _isServer
+  };
+
+  /*  */
+
+  /**
+   * Observer class that is attached to each observed
+   * object. Once attached, the observer converts the target
+   * object's property keys into getter/setters that
+   * collect dependencies and dispatch updates.
+   * 附在每个观察对象上的观测器类。一旦被连接，观察者将目标对象的属性键转换为getter/setters。收集依赖和调度更新
+   */
+
+  var Observer = function Observer(value) {
+    this.value = value;
+    this.dep = new Dep();
+    this.vmCount = 0;
+    def(value, '__ob__', this); /// ????
+    // ???
+    if (Array.isArray(value)) {
+      var augment = hasProto ?
+        protoAugment :
+        copyAugment;
+      augment(value, arrayMethods, arrayKeys);
+      this.observeArray(value);
+    } else {
+      this.walk(value);
+    }
+  };
+  /**
+   * Walk through each property and convert them into
+   * getter/setters. This method should only be called when
+   * value type is Object.
+   * 遍历每个属性并将它们转换为getter/setters。只有当值类型为对象时才调用此方法
+   */
+  Observer.prototype.walk = function walk (obj) {
+    var keys = Object.keys(obj);
+    console.log(keys);
+    for (var i = 0; i < keys.length; i++) {
+      defineReactive(obj, keys[i]);
+    }
+  };
+
+  /**
+   * Attempt to create an observer instance for a value,
+   * returns the new observer if successfully observed,
+   * or the existing observer if the value already has one.
+   * 尝试为值创建观察者实例，如果成功观察则返回新观察者，如果值已经有观察者，则返回现有观察者
+   */
+  function observe(value, asRootData) {
+    if (!isObject(value) || value instanceof VNode) {
+      return
+    }
+    var ob;
+    if (hasOwn(value, '__ob__') && value.__ob__ instanceof Observer) {
+      ob = value.__ob__;
+      /// ???
+    } else if (!isServerRendering() &&
+      (Array.isArray(value) || isPlainObject(value)) &&
+      Object.isExtensible(value) &&
+      !value._isVue) {
+      // Object.isExtensible用于判断对象是否可以被拓展
+      ob = new Observer(value);
+    }
+  }
+
+  /**
+   * Define a reactive property on an Object.
+   */
+  function defineReactive (
+    obj,
+    key,
+    val,
+    customSetter,
+    shallow
+  ) {
+    
+  }
+
+  /*  */
+
+  var sharedPropertyDefinition = {
+    enumerable: true,
+    configurable: true,
+    get: noop,
+    set: noop
+  };
+  /**
+   * 这里开始用到Vue的核心 Object.defineProperty
+   */
+  function proxy(target, sourceKey, key) {
+    sharedPropertyDefinition.get = function proxyGetter() {
+      return this[sourceKey][key]
+    };
+    sharedPropertyDefinition.set = function proxySetter(val) {
+      this[sourceKey][key] = val;
+    };
+    Object.defineProperty(target, key, sharedPropertyDefinition);
+  }
+
+  function initState(vm) {
+    vm._watchers = [];
+    var opts = vm.$options;
+    if (opts.props) ;
+    if (opts.methods) { initMethods(vm, opts.methods); }
+    if (opts.data) {
+      initData(vm);
+    } else {
+      observe(vm._data = {}, true /* asRootData */ );
+      // ???
+    }
+  }
+
+  function initMethods(vm, methods) {
+
+  }
+
+  function initData(vm) {
+    var data = vm.$options.data;
+    data = vm._data = typeof data === 'function' ? getData(data, vm) : data || {};
+    if (!isPlainObject(data)) {
+      data = {};
+    }
+    // proxy data on instance
+    // 代理data
+    var keys = Object.keys(data);
+    var props = vm.$options.props;
+    var methods = vm.$options.methods;
+    var i = keys.length;
+    while (i--) {
+      var key = keys[i];
+      {
+        if (methods && hasOwn(methods, key)) ;
+      }
+      if (props && hasOwn(props, key)) ; else if (!isReserved(key)) {
+        /**
+         * data的数据放在了_data下面
+         */
+        proxy(vm, "_data", key);
+      }
+    }
+    // observe data
+    // 观察data
+    observe(data, true /* asRootData */);
+  }
+
+  function getData(data, vm) {
+    // #7573 disable dep collection when invoking data getters
+    // 在调用数据吸收器时禁用DEP集合
+    // ???
+    pushTarget();
+    try {
+      return data.call(vm, vm)
+    } catch (e) {
+      // handleError(e, vm, `data()`) /// ???
+    } finally {
+      popTarget();
+    }
+  }
+
+  /*  */
+  function initEvents(vm) {
+    vm._events = Object.create(null);
+    vm._hasHookEvent = false; // ???
+    // init parent attached events
+    var listeners = vm.$options._parentListeners;
+  }
+
+  /*  */
+
+  /**
+   * Runtime helper for resolving raw children VNodes into a slot object.
+   */
+  function resolveSlots (
+    children,
+    context
+  ) {
+    var slots = {};
+    if (!children) {
+      return slots
+    }
+  }
+
+  /*  */
+  function initRender(vm) {
+    vm._vnode = null; // the root of the child tree
+    vm._staticTrees = null; // v-once cached trees
+    var options = vm.$options;
+    var parentVnode = vm.$vnode = options._parentVnode; // the placeholder node in parent tree
+    var renderContext = parentVnode && parentVnode.context;
+    vm.$slots = resolveSlots(options._renderChildren, renderContext);
+  }
+
+  /*  */
 
   // 这个文件是性能判断
   // https://developer.mozilla.org/zh-CN/docs/Web/API/Window/performance
@@ -442,12 +724,12 @@
   }
 
   /*  */
-  var uid = 0; // 为了区分创建不同实例的标志
+  var uid$1 = 0; // 为了区分创建不同实例的标志
   function initMixin(Vue ) {
     Vue.prototype._init = function (options  ) {
       var vm = this; // vm 就是实例本身 this
       // a uid
-      vm._uid = uid++; // 每次创建新实例 +1
+      vm._uid = uid$1++; // 每次创建新实例 +1
       // a flag to avoid this being observed
       vm._isVue = true;
       // merge options
@@ -470,6 +752,8 @@
       initLifecycle(vm); // ???
       initEvents(vm); // ???
       initRender(vm); // ???
+      callHook(vm, 'beforeCreate'); // ???
+      initState(vm);
     };
   }
 

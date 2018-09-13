@@ -1,9 +1,11 @@
 /* @flow */
 import config from '../config' // 相关配置
-import { initLifecycle } from './lifecycle'
+import { initLifecycle, callHook } from './lifecycle'
 import { initProxy } from './proxy'
+import { initState } from './state'
 import { initEvents } from './events'
 import { initRender } from './render'
+import { initInjections } from './inject'
 import {
   mergeOptions
 } from '../util/index'
@@ -53,6 +55,9 @@ export function initMixin(Vue: Class < Component > ) {
     initLifecycle(vm) // ???
     initEvents(vm) // ???
     initRender(vm) // ???
+    callHook(vm, 'beforeCreate') // ???
+    initInjections(vm) // resolve injections before data/props ???
+    initState(vm)
   }
 }
 
