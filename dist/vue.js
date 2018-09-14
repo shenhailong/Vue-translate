@@ -1171,6 +1171,7 @@
 
 
   // public mount method
+  // 这是共用的mount ，外层entry-runtime-with-compiler会有一个新¥mount，但是也是用的这个Call
   Vue.prototype.$mount = function (
     el,
     hydrating
@@ -1180,6 +1181,107 @@
   };
 
   /*  */
+  var baseOptions = {
+    
+  };
+
+  /*  */
+
+  /**
+   * Convert HTML string to AST.
+   */
+
+  function parse (
+    template,
+    options
+  ) {
+    
+  }
+
+  /*  */
+
+
+  function createCompilerCreator (baseCompile) {
+    return function createCompiler (baseOptions) {
+    }
+  }
+
+  /*  */
+  var createCompiler = createCompilerCreator(function baseCompile (
+    template,
+    options
+  ) {
+    console.log(parse);
+    return {
+      
+    }
+  });
+
+  /*  */
+
+  var ref = createCompiler(baseOptions);
+  var compileToFunctions = ref.compileToFunctions;
+
+  /*  */
+  // ???
+  // check whether current browser encodes a char inside attribute values
+  var div;
+  function getShouldDecode (href) {
+    div = div || document.createElement('div');
+    div.innerHTML = href ? "<a href=\"\n\"/>" : "<div a=\"\n\"/>";
+    return div.innerHTML.indexOf('&#10;') > 0
+  }
+
+  // #3663: IE encodes newlines inside attribute values while other browsers don't
+  var shouldDecodeNewlines = inBrowser ? getShouldDecode(false) : false;
+  // #6828: chrome encodes content in a[href]
+  var shouldDecodeNewlinesForHref = inBrowser ? getShouldDecode(true) : false;
+
+  /*  */
+  Vue.prototype.$mount = function (
+    el,
+    hydrating
+  ) {
+    el = el && query(el);
+    // 禁止挂载在 body 和 html
+    /* istanbul ignore if */
+    if (el === document.body || el === document.documentElement) {
+      warn(
+        "Do not mount Vue to <html> or <body> - mount to normal elements instead."
+      );
+      return this
+    }
+    var options = this.$options;
+    // resolve template/el and convert to render function
+    // 解析模板/EL并转换为渲染函数
+    if (!options.render) {
+      var template = options.template;
+      if (template) {
+        if(typeof template === 'string'){
+          // 这里是#选择器的
+          if (template.charAt(0) === '#') ;
+        }
+      }
+
+      if (template) {
+        /* istanbul ignore if */
+        // if ("development" !== 'production' && config.performance && mark) {
+        //   mark('compile')
+        // }
+        var ref = compileToFunctions(template, {
+          shouldDecodeNewlines: shouldDecodeNewlines,
+          shouldDecodeNewlinesForHref: shouldDecodeNewlinesForHref,
+          delimiters: options.delimiters,
+          comments: options.comments
+        }, this);
+        var render = ref.render;
+        var staticRenderFns = ref.staticRenderFns;
+        // delimiters comments ???
+        console.log(render);
+        console.log(staticRenderFns);
+      }
+    }
+  };
 
   return Vue;
 
