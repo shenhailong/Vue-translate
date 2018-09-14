@@ -9,7 +9,8 @@ import {
 } from './debug'
 
 import {
-  ASSET_TYPES
+  ASSET_TYPES,
+  LIFECYCLE_HOOKS
 } from 'shared/constants'
 
 import {
@@ -132,6 +133,27 @@ strats.data = function (
 
   return mergeDataOrFn(parentVal, childVal, vm)
 }
+
+/**
+ * Hooks and props are merged as arrays.
+ * 生命周期钩子
+ */
+function mergeHook (
+  parentVal: ?Array<Function>,
+  childVal: ?Function | ?Array<Function>
+): ?Array<Function> {
+  return childVal
+    ? parentVal
+      ? parentVal.concat(childVal)
+      : Array.isArray(childVal)
+        ? childVal
+        : [childVal]
+    : parentVal
+}
+
+LIFECYCLE_HOOKS.forEach(hook => {
+  strats[hook] = mergeHook
+})
 
 /**
  * Assets

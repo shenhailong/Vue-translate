@@ -15,19 +15,36 @@
         el: '#app',
         data: function() {
           return {
-            _a: '1',
-            $b: {
-              c: '3'
-            },
-            d: 2
+            a: 'valueA1',
+            b: {
+              c: 8888888
+            }
           }
+        },
+        created(){
+          // console.log('created😂')
+          // console.log(this.a)
+          // this.hh()
         },
         methods: {
           ok: function(){
             console.log('实例ok')
+          },
+          hh: function() {
+            console.log(this.b.c)
           }
-        }
+        },
+        watch: {
+          a: function(newVal, oldVal){
+            console.log(newVal)
+            console.log(oldVal)
+          }
+        },
+        template: '<div>{{a}}</div>'
       })
+      // console.log(a.a)
+      // a.a = 99999
+      // console.log(a.a)
       // var b = new Vue(function() {
       //   options: {
       //     a: 999

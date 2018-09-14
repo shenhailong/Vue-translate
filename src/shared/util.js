@@ -78,3 +78,36 @@ export function toRawType (value: any): string {
 export function isPlainObject(obj:any): boolean {
   return _toString.call(obj) === '[object Object]'
 }
+
+/**
+ * Simple bind polyfill for environments that do not support it... e.g.
+ * PhantomJS 1.x. Technically we don't need this anymore since native bind is
+ * now more performant in most browsers, but removing it would be breaking for
+ * code that was able to run in PhantomJS 1.x, so this must be kept for
+ * backwards compatibility.
+ * @param nativeBind 原生bind
+ * 简单绑定聚合体的环境不支持它…例如从本质上说，我们不再需要这个了。现在大多数浏览器的性能更高，但是删除它将是一种破坏。能够在幻像1 .x中运行的代码，因此必须保存向后兼容
+ * 就是做bind兼容的
+ */
+
+/* istanbul ignore next */
+function polyfillBind (fn: Function, ctx: Object): Function {
+  function boundFn (a) {
+    const l = arguments.length
+    return l
+      ? l > 1
+        ? fn.apply(ctx, arguments)
+        : fn.call(ctx, a)
+      : fn.call(ctx)
+  }
+
+  boundFn._length = fn.length
+  return boundFn
+}
+
+function nativeBind (fn: Function, ctx: Object): Function {
+  return fn.bind(ctx)
+}
+export const bind = Function.prototype.bind
+  ? nativeBind
+  : polyfillBind

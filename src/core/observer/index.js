@@ -52,7 +52,6 @@ export class Observer {
    */
   walk(obj: Object) {
     const keys = Object.keys(obj)
-    console.log(keys)
     for (let i = 0; i < keys.length; i++) {
       defineReactive(obj, keys[i])
     }
@@ -81,17 +80,75 @@ export function observe(value: any, asRootData: ? boolean): Observer | void {
     // Object.isExtensible用于判断对象是否可以被拓展
     ob = new Observer(value)
   }
+  if (asRootData && ob) {
+    ob.vmCount++
+  }
+  return ob
 }
 
 /**
  * Define a reactive property on an Object.
  */
-export function defineReactive (
+export function defineReactive(
   obj: Object,
   key: string,
   val: any,
-  customSetter?: ?Function,
-  shallow?: boolean
+  customSetter ? : ? Function,
+  shallow ? : boolean
 ) {
-  
+  // shallow ???
+  const dep = new Dep()
+  // Object.getOwnPropertyDescriptor
+  // 该方法允许对一个属性的描述进行检索
+  // 就是获取属性，举例
+  // o = { bar: 42 };
+  // d = Object.getOwnPropertyDescriptor(o, "bar");
+  // d {
+  //   configurable: true,
+  //   enumerable: true,
+  //   value: 42,
+  //   writable: true
+  // }
+
+  const property = Object.getOwnPropertyDescriptor(obj, key)
+  if (property && property.configurable === false) {
+    return
+  }
+  // cater for pre-defined getter/setters
+  const getter = property && property.get
+  const setter = property && property.set
+  if ((!getter || setter) && arguments.length === 2) {
+    val = obj[key]
+  }
+  // 如果是对象就一直遍历
+  let childOb = !shallow && observe(val)
+  Object.defineProperty(obj, key, {
+    enumerable: true,
+    configurable: true,
+    get: function reactiveGetter() {
+      const value = getter ? getter.call(obj) : val
+      if (Dep.target) {
+        // ???
+      }
+      return value
+    },
+    set: function reactiveSetter(newVal) {
+      const value = getter ? getter.call(obj) : val
+      /* eslint-disable no-self-compare */
+      if (newVal === value || (newVal !== newVal && value !== value)) {
+        return
+      }
+      /* eslint-enable no-self-compare */
+      if (process.env.NODE_ENV !== 'production' && customSetter) {
+        customSetter()
+      }
+      if (setter) {
+        setter.call(obj, newVal)
+      } else {
+        val = newVal
+      }
+      childOb = !shallow && observe(newVal)
+      dep.notify()
+    }
+  })
 }

@@ -1,5 +1,6 @@
 // import { warn } from '../util/index' // 警告
 import { initMixin } from './init'
+import { stateMixin } from './state'
 function Vue(options) {
   if(process.env.NODE_ENV !== 'production' && !(this instanceof Vue)){
 
@@ -11,4 +12,5 @@ function Vue(options) {
 }
 
 initMixin(Vue)
+stateMixin(Vue)
 export default Vue

@@ -1,11 +1,24 @@
 /* @flow */
 import config from '../config' // 相关配置
-import { initLifecycle, callHook } from './lifecycle'
-import { initProxy } from './proxy'
-import { initState } from './state'
-import { initEvents } from './events'
-import { initRender } from './render'
-import { initInjections } from './inject'
+import {
+  initLifecycle,
+  callHook
+} from './lifecycle'
+import {
+  initProxy
+} from './proxy'
+import {
+  initState
+} from './state'
+import {
+  initEvents
+} from './events'
+import {
+  initRender
+} from './render'
+import {
+  initInjections
+} from './inject'
 import {
   mergeOptions
 } from '../util/index'
@@ -19,7 +32,7 @@ export function initMixin(Vue: Class < Component > ) {
     const vm: Component = this // vm 就是实例本身 this
     // a uid
     vm._uid = uid++ // 每次创建新实例 +1
-      let startTag
+    let startTag
     let endTag // 测试性能时间用 为了performance.measure()使用
     /* istanbul ignore if */ //？？？
     // 开发环境性能测试
@@ -58,6 +71,17 @@ export function initMixin(Vue: Class < Component > ) {
     callHook(vm, 'beforeCreate') // ???
     initInjections(vm) // resolve injections before data/props ???
     initState(vm)
+    // initProvide(vm) // resolve provide after data/props
+    callHook(vm, 'created')
+    /* istanbul ignore if */
+    if (process.env.NODE_ENV !== 'production' && config.performance && mark) {
+      // vm._name = formatComponentName(vm, false)
+      // mark(endTag)
+      // measure(`vue ${vm._name} init`, startTag, endTag)
+    }
+    if(vm.$options.el){
+      vm.$mount(vm.$options.el)
+    }
   }
 }
 

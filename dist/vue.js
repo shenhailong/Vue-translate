@@ -30,88 +30,56 @@
     performance: false,
   });
 
+  /*  */
+  var uid = 0;
   /**
    * A dep is an observable that can have multiple
    * directives subscribing to it.
    * DEP是可观察的，可以具有订阅它的多个指令 ???
    */
 
-  var Dep = function Dep () {};
+  var Dep$1 = function Dep () {
+    this.id = uid++;
+    this.subs = [];
+  };
+  Dep$1.prototype.notify = function notify () {
+    // stabilize the subscriber list first
+    var subs = this.subs.slice();
+    // console.log(subs)
+    for (var i = 0, l = subs.length; i < l; i++) {
+      subs[i].update();
+    }
+  };
 
   // the current target watcher being evaluated.
   // this is globally unique because there could be only one
   // watcher being evaluated at any time.
   // 正在评估的当前目标观察员。这是全球唯一的，因为在任何时候只有一个观察者被评估
-  Dep.target = null;
+  Dep$1.target = null;
   var targetStack = [];
 
   function pushTarget (_target) {
-    if (Dep.target) { targetStack.push(Dep.target); }
-    Dep.target = _target;
+    if (Dep$1.target) { targetStack.push(Dep$1.target); }
+    Dep$1.target = _target;
   }
 
   function popTarget () {
-    Dep.target = targetStack.pop();
-  }
-
-  /*  */
-  // ???
-  function initLifecycle(vm) {
-    var options = vm.$options;
-    var parent = options.parent;
-    // ???
-    if (parent && !options.abstract) {
-      while (parent.$options.abstract && parent.$parent) {
-        parent = parent.$parent;
-      }
-      parent.$children.push(vm);
-    }
-    vm.$parent = parent;
-    vm.$root = parent ? parent.$root : vm;
-
-    vm.$children = [];
-    vm.$refs = {};
-
-    vm._watcher = null;
-    vm._inactive = null;
-    vm._directInactive = false;
-    vm._isMounted = false;
-    vm._isDestroyed = false;
-    vm._isBeingDestroyed = false;
-  }
-
-  function callHook (vm, hook) {
-    // #7573 disable dep collection when invoking lifecycle hooks
-    // 当调用生命周期挂钩时，第7573步禁用DEP集合
-    // ???
-    pushTarget();
-    var handlers = vm.$options[hook];
-    if (handlers) {
-      for (var i = 0, j = handlers.length; i < j; i++) {
-        try {
-          handlers[i].call(vm);
-        } catch (e) {
-          handleError(e, vm, (hook + " hook"));
-        }
-      }
-    }
-    if (vm._hasHookEvent) {
-      vm.$emit('hook:' + hook);
-    }
-    popTarget();
-  }
-
-  // ???
-  var initProxy;
-  {
-    initProxy = function initProxy (vm) {
-      vm._renderProxy = vm;
-    };
+    Dep$1.target = targetStack.pop();
   }
 
   /*  */
 
   var VNode = function VNode () {};
+
+
+  var createEmptyVNode = function (text) {
+    if ( text === void 0 ) text = '';
+
+    var node = new VNode();
+    node.text = text;
+    node.isComment = true;
+    return node
+  };
 
   /*  */
   /**
@@ -194,12 +162,60 @@
     return _toString.call(obj) === '[object Object]'
   }
 
-  var warn = noop;
+  /**
+   * Simple bind polyfill for environments that do not support it... e.g.
+   * PhantomJS 1.x. Technically we don't need this anymore since native bind is
+   * now more performant in most browsers, but removing it would be breaking for
+   * code that was able to run in PhantomJS 1.x, so this must be kept for
+   * backwards compatibility.
+   * @param nativeBind 原生bind
+   * 简单绑定聚合体的环境不支持它…例如从本质上说，我们不再需要这个了。现在大多数浏览器的性能更高，但是删除它将是一种破坏。能够在幻像1 .x中运行的代码，因此必须保存向后兼容
+   * 就是做bind兼容的
+   */
+
+  /* istanbul ignore next */
+  function polyfillBind (fn, ctx) {
+    function boundFn (a) {
+      var l = arguments.length;
+      return l
+        ? l > 1
+          ? fn.apply(ctx, arguments)
+          : fn.call(ctx, a)
+        : fn.call(ctx)
+    }
+
+    boundFn._length = fn.length;
+    return boundFn
+  }
+
+  function nativeBind (fn, ctx) {
+    return fn.bind(ctx)
+  }
+  var bind = Function.prototype.bind
+    ? nativeBind
+    : polyfillBind;
+
+  var warn$1 = noop;
 
   var ASSET_TYPES = [
     'component',
     'directive',
     'filter'
+  ];
+
+
+  var LIFECYCLE_HOOKS = [
+    'beforeCreate',
+    'created',
+    'beforeMount',
+    'mounted',
+    'beforeUpdate',
+    'updated',
+    'beforeDestroy',
+    'destroyed',
+    'activated',
+    'deactivated',
+    'errorCaptured'
   ];
 
   /*  */
@@ -304,6 +320,27 @@
 
     return mergeDataOrFn(parentVal, childVal, vm)
   };
+
+  /**
+   * Hooks and props are merged as arrays.
+   * 生命周期钩子
+   */
+  function mergeHook (
+    parentVal,
+    childVal
+  ) {
+    return childVal
+      ? parentVal
+        ? parentVal.concat(childVal)
+        : Array.isArray(childVal)
+          ? childVal
+          : [childVal]
+      : parentVal
+  }
+
+  LIFECYCLE_HOOKS.forEach(function (hook) {
+    strats[hook] = mergeHook;
+  });
 
   /**
    * Assets
@@ -452,7 +489,7 @@
   // 判断是不是对象
   function assertObjectType(name, value, vm) {
     if (!isPlainObject(value)) {
-      warn(
+      warn$1(
         "Invalid value for option \"" + name + "\": expected an Object, " +
         "but got " + (toRawType(value)) + ".",
         vm
@@ -478,13 +515,31 @@
    * Define a property.
    */
   function def (obj, key, val, enumerable) {
-    console.log(val);
     Object.defineProperty(obj, key, {
       value: val,
       enumerable: !!enumerable,
       writable: true,
       configurable: true
     });
+  }
+
+
+  /**
+   * Parse simple path.
+   */
+  var bailRE = /[^\w.$]/;
+  function parsePath (path) {
+    if (bailRE.test(path)) {
+      return
+    }
+    var segments = path.split('.');
+    return function (obj) {
+      for (var i = 0; i < segments.length; i++) {
+        if (!obj) { return }
+        obj = obj[segments[i]];
+      }
+      return obj
+    }
   }
 
   /*  */
@@ -494,6 +549,9 @@
   */
   // Browser environment sniffing
   var inBrowser = typeof window !== 'undefined';
+
+  // Firefox has a "watch" function on Object.prototype...
+  var nativeWatch = ({}).watch;
 
   // this needs to be lazy-evaled because vue may be required before
   // 由于需要VUE，所以需要先对此进行评估
@@ -516,6 +574,150 @@
   };
 
   /*  */
+  // ???
+  function initLifecycle(vm) {
+    var options = vm.$options;
+    var parent = options.parent;
+    // ???
+    if (parent && !options.abstract) {
+      while (parent.$options.abstract && parent.$parent) {
+        parent = parent.$parent;
+      }
+      parent.$children.push(vm);
+    }
+    vm.$parent = parent;
+    vm.$root = parent ? parent.$root : vm;
+
+    vm.$children = [];
+    vm.$refs = {};
+
+    vm._watcher = null;
+    vm._inactive = null;
+    vm._directInactive = false;
+    vm._isMounted = false;
+    vm._isDestroyed = false;
+    vm._isBeingDestroyed = false;
+  }
+
+  function callHook (vm, hook) {
+    // #7573 disable dep collection when invoking lifecycle hooks
+    // 当调用生命周期挂钩时，第7573步禁用DEP集合
+    // ???
+    pushTarget();
+    var handlers = vm.$options[hook];
+    if (handlers) {
+      for (var i = 0, j = handlers.length; i < j; i++) {
+        try {
+          handlers[i].call(vm);
+        } catch (e) {
+          handleError(e, vm, (hook + " hook"));
+        }
+      }
+    }
+    if (vm._hasHookEvent) {
+      vm.$emit('hook:' + hook);
+    }
+    popTarget();
+  }
+
+
+  function mountComponent (
+    vm,
+    el,
+    hydrating
+  ) {
+    vm.$el = el;
+    if (!vm.$options.render) {
+      // 先创建一个空虚拟节点
+      vm.$options.render = createEmptyVNode;
+      {
+        /* istanbul ignore if */
+        if ((vm.$options.template && vm.$options.template.charAt(0) !== '#') ||
+          vm.$options.el || el) ;
+      }
+    }
+  }
+
+  // ???
+  var initProxy;
+  {
+    initProxy = function initProxy (vm) {
+      vm._renderProxy = vm;
+    };
+  }
+
+  /*  */
+  var uid$1 = 0;
+
+  /**
+   * A watcher parses an expression, collects dependencies,
+   * and fires callback when the expression value changes.
+   * This is used for both the $watch() api and directives.
+   * 观察者解析表达式，收集依赖关系，当表达式值改变时触发回调。这用于$watch()API和指令。
+   * Vue 核心 !!!
+   */
+  var Watcher = function Watcher(
+    vm,
+    expOrFn,
+    cb,
+    options,
+    isRenderWatcher  
+  ) {
+    this.vm = vm;
+    if (isRenderWatcher) {
+      vm._watcher = this;
+    }
+    vm._watchers.push(this);
+    // options ???
+    if (options) {
+      this.deep = !!options.deep;
+      this.user = !!options.user;
+      this.computed = !!options.computed;
+      this.sync = !!options.sync;
+      this.before = options.before;
+    } else {
+      this.deep = this.user = this.computed = this.sync = false;
+    }
+    this.cb = cb;
+    this.id = ++uid$1; // uid for batching
+    this.active = true;
+    this.dirty = this.computed; // for computed watchers
+    this.deps = [];
+    this.newDeps = [];
+    this.depIds = new Set();
+    this.newDepIds = new Set();
+    this.expression = expOrFn.toString();
+    // parse expression for getter
+    if (typeof expOrFn === 'function') {
+      this.getter = expOrFn;
+    } else {
+      this.getter = parsePath(expOrFn);
+      if (!this.getter) {
+        this.getter = function () {};
+        warn(
+          "Failed watching path: \"" + expOrFn + "\" " +
+          'Watcher only accepts simple dot-delimited paths. ' +
+          'For full control, use a function instead.',
+          vm
+        );
+      }
+    }
+    if (this.computed) {
+      this.value = undefined;
+      this.dep = new Dep();
+    } else {
+      this.value = this.get();
+    }
+  };
+  /**
+   * Evaluate the getter, and re-collect dependencies.
+   * 评估getter并重新收集依赖关系
+   */
+  Watcher.prototype.get = function get () {
+      
+  };
+
+  /*  */
 
   /**
    * Observer class that is attached to each observed
@@ -527,7 +729,7 @@
 
   var Observer = function Observer(value) {
     this.value = value;
-    this.dep = new Dep();
+    this.dep = new Dep$1();
     this.vmCount = 0;
     def(value, '__ob__', this); /// ????
     // ???
@@ -549,7 +751,6 @@
    */
   Observer.prototype.walk = function walk (obj) {
     var keys = Object.keys(obj);
-    console.log(keys);
     for (var i = 0; i < keys.length; i++) {
       defineReactive(obj, keys[i]);
     }
@@ -576,19 +777,74 @@
       // Object.isExtensible用于判断对象是否可以被拓展
       ob = new Observer(value);
     }
+    if (asRootData && ob) {
+      ob.vmCount++;
+    }
+    return ob
   }
 
   /**
    * Define a reactive property on an Object.
    */
-  function defineReactive (
+  function defineReactive(
     obj,
     key,
     val,
-    customSetter,
-    shallow
+    customSetter  ,
+    shallow  
   ) {
-    
+    // shallow ???
+    var dep = new Dep$1();
+    // Object.getOwnPropertyDescriptor
+    // 该方法允许对一个属性的描述进行检索
+    // 就是获取属性，举例
+    // o = { bar: 42 };
+    // d = Object.getOwnPropertyDescriptor(o, "bar");
+    // d {
+    //   configurable: true,
+    //   enumerable: true,
+    //   value: 42,
+    //   writable: true
+    // }
+
+    var property = Object.getOwnPropertyDescriptor(obj, key);
+    if (property && property.configurable === false) {
+      return
+    }
+    // cater for pre-defined getter/setters
+    var getter = property && property.get;
+    var setter = property && property.set;
+    if ((!getter || setter) && arguments.length === 2) {
+      val = obj[key];
+    }
+    // 如果是对象就一直遍历
+    var childOb = !shallow && observe(val);
+    Object.defineProperty(obj, key, {
+      enumerable: true,
+      configurable: true,
+      get: function reactiveGetter() {
+        var value = getter ? getter.call(obj) : val;
+        return value
+      },
+      set: function reactiveSetter(newVal) {
+        var value = getter ? getter.call(obj) : val;
+        /* eslint-disable no-self-compare */
+        if (newVal === value || (newVal !== newVal && value !== value)) {
+          return
+        }
+        /* eslint-enable no-self-compare */
+        if (customSetter) {
+          customSetter();
+        }
+        if (setter) {
+          setter.call(obj, newVal);
+        } else {
+          val = newVal;
+        }
+        childOb = !shallow && observe(newVal);
+        dep.notify();
+      }
+    });
   }
 
   /*  */
@@ -623,10 +879,22 @@
       observe(vm._data = {}, true /* asRootData */ );
       // ???
     }
+    if (opts.computed) { initComputed(vm, opts.computed); }
+    if (opts.watch && opts.watch !== nativeWatch) {
+      initWatch(vm, opts.watch);
+    }
   }
 
   function initMethods(vm, methods) {
-
+    var props = vm.$options.props;
+    for (var key in methods) {
+      {
+        if (methods[key] == null) ;
+        if (props && hasOwn(props, key)) ;
+        if ((key in vm) && isReserved(key)) ;
+      }
+      vm[key] = methods[key] == null ? noop : bind(methods[key], vm);
+    }
   }
 
   function initData(vm) {
@@ -655,7 +923,7 @@
     }
     // observe data
     // 观察data
-    observe(data, true /* asRootData */);
+    observe(data, true /* asRootData */ );
   }
 
   function getData(data, vm) {
@@ -670,6 +938,58 @@
     } finally {
       popTarget();
     }
+  }
+
+  function initComputed(vm, computed) {}
+
+  function initWatch(vm, watch) {
+    for (var key in watch) {
+      var handler = watch[key];
+      // ？？？ Array
+      if (Array.isArray(handler)) {
+        for (var i = 0; i < handler.length; i++) {
+          createWatcher(vm, key, handler[i]);
+        }
+      } else {
+        createWatcher(vm, key, handler);
+      }
+    }
+  }
+
+
+  function createWatcher(
+    vm,
+    expOrFn,
+    handler,
+    options  
+  ) {
+    if (isPlainObject(handler)) {
+      /// ???
+      options = handler;
+      handler = handler.handler;
+    }
+    if (typeof handler === 'string') {
+      handler = vm[handler];
+    }
+    return vm.$watch(expOrFn, handler, options)
+  }
+
+
+  function stateMixin(Vue ) {
+    Vue.prototype.$watch = function (
+      expOrFn,
+      cb,
+      options  
+    ) {
+      var vm = this;
+      if (isPlainObject(cb)) {
+        return createWatcher(vm, expOrFn, cb, options)
+      }
+      options = options || {};
+      options.user = true;
+      // console.log(cb)
+      var watcher = new Watcher(vm, expOrFn, cb, options);
+    };
   }
 
   /*  */
@@ -724,12 +1044,12 @@
   }
 
   /*  */
-  var uid$1 = 0; // 为了区分创建不同实例的标志
+  var uid$2 = 0; // 为了区分创建不同实例的标志
   function initMixin(Vue ) {
     Vue.prototype._init = function (options  ) {
       var vm = this; // vm 就是实例本身 this
       // a uid
-      vm._uid = uid$1++; // 每次创建新实例 +1
+      vm._uid = uid$2++; // 每次创建新实例 +1
       // a flag to avoid this being observed
       vm._isVue = true;
       // merge options
@@ -754,6 +1074,11 @@
       initRender(vm); // ???
       callHook(vm, 'beforeCreate'); // ???
       initState(vm);
+      // initProvide(vm) // resolve provide after data/props
+      callHook(vm, 'created');
+      if(vm.$options.el){
+        vm.$mount(vm.$options.el);
+      }
     };
   }
 
@@ -771,6 +1096,7 @@
   }
 
   initMixin(Vue);
+  stateMixin(Vue);
 
   // 先写一点 ？？？
   var KeepAlive = {
@@ -822,6 +1148,36 @@
   initGlobalAPI(Vue);
 
   /*  */
+
+  /**
+   * Query an element selector if it's not an element already.
+   */
+  function query (el) {
+    if (typeof el === 'string') {
+      var selected = document.querySelector(el);
+      if (!selected) {
+        warn(
+          'Cannot find element: ' + el
+        );
+        return document.createElement('div')
+      }
+      return selected
+    } else {
+      return el
+    }
+  }
+
+  /*  */ 
+
+
+  // public mount method
+  Vue.prototype.$mount = function (
+    el,
+    hydrating
+  ) {
+    el = el && inBrowser ? query(el) : undefined;
+    return mountComponent(this, el, hydrating)
+  };
 
   /*  */
 

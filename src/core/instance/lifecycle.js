@@ -1,5 +1,9 @@
 /* @flow */
 import { pushTarget, popTarget } from '../observer/dep'
+import { createEmptyVNode } from '../vdom/vnode'
+import {
+  warn
+} from '../util/index'
 // ???
 export function initLifecycle(vm: Component) {
   const options = vm.$options
@@ -44,4 +48,34 @@ export function callHook (vm: Component, hook: string) {
     vm.$emit('hook:' + hook)
   }
   popTarget()
+}
+
+
+export function mountComponent (
+  vm: Component,
+  el: ?Element,
+  hydrating?: boolean
+): Component {
+  vm.$el = el
+  if (!vm.$options.render) {
+    // 先创建一个空虚拟节点
+    vm.$options.render = createEmptyVNode
+    if (process.env.NODE_ENV !== 'production') {
+      /* istanbul ignore if */
+      if ((vm.$options.template && vm.$options.template.charAt(0) !== '#') ||
+        vm.$options.el || el) {
+        warn(
+          'You are using the runtime-only build of Vue where the template ' +
+          'compiler is not available. Either pre-compile the templates into ' +
+          'render functions, or use the compiler-included build.',
+          vm
+        )
+      } else {
+        warn(
+          'Failed to mount component: template or render function not defined.',
+          vm
+        )
+      }
+    }
+  }
 }

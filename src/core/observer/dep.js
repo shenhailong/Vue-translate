@@ -9,6 +9,20 @@ let uid = 0
 
 export default class Dep{
   static target: ?Watcher;
+  id: number;
+  subs: Array<Watcher>;
+  constructor () {
+    this.id = uid++
+    this.subs = []
+  }
+  notify () {
+    // stabilize the subscriber list first
+    const subs = this.subs.slice()
+    // console.log(subs)
+    for (let i = 0, l = subs.length; i < l; i++) {
+      subs[i].update()
+    }
+  }
 }
 
 // the current target watcher being evaluated.

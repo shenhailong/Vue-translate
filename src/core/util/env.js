@@ -6,6 +6,9 @@
 // Browser environment sniffing
 export const inBrowser = typeof window !== 'undefined'
 
+// Firefox has a "watch" function on Object.prototype...
+export const nativeWatch = ({}).watch
+
 // this needs to be lazy-evaled because vue may be required before
 // 由于需要VUE，所以需要先对此进行评估
 // vue-server-renderer can set VUE_ENV

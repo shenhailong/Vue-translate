@@ -1,4 +1,5 @@
 /* @flow */
+import Watcher from '../observer/watcher'
 import {
   pushTarget,
   popTarget
@@ -9,11 +10,13 @@ import {
 } from '../observer/index'
 
 import {
+  bind,
   warn,
   noop,
   hasOwn,
   isReserved,
-  isPlainObject
+  isPlainObject,
+  nativeWatch
 } from '../util/index'
 
 const sharedPropertyDefinition = {
@@ -46,6 +49,10 @@ export function initState(vm: Component) {
     observe(vm._data = {}, true /* asRootData */ )
     // ???
   }
+  if (opts.computed) initComputed(vm, opts.computed)
+  if (opts.watch && opts.watch !== nativeWatch) {
+    initWatch(vm, opts.watch)
+  }
 }
 
 function initProps(vm: Component, propsOptions: Object) {
@@ -53,7 +60,31 @@ function initProps(vm: Component, propsOptions: Object) {
 }
 
 function initMethods(vm: Component, methods: Object) {
-
+  const props = vm.$options.props
+  for (const key in methods) {
+    if (process.env.NODE_ENV !== 'production') {
+      if (methods[key] == null) {
+        warn(
+          `Method "${key}" has an undefined value in the component definition. ` +
+          `Did you reference the function correctly?`,
+          vm
+        )
+      }
+      if (props && hasOwn(props, key)) {
+        warn(
+          `Method "${key}" has already been defined as a prop.`,
+          vm
+        )
+      }
+      if ((key in vm) && isReserved(key)) {
+        warn(
+          `Method "${key}" conflicts with an existing Vue instance method. ` +
+          `Avoid defining component methods that start with _ or $.`
+        )
+      }
+    }
+    vm[key] = methods[key] == null ? noop : bind(methods[key], vm)
+  }
 }
 
 function initData(vm: Component) {
@@ -98,7 +129,7 @@ function initData(vm: Component) {
   }
   // observe data
   // 观察data
-  observe(data, true /* asRootData */)
+  observe(data, true /* asRootData */ )
 }
 
 export function getData(data: Function, vm: Component): any {
@@ -112,5 +143,57 @@ export function getData(data: Function, vm: Component): any {
     // handleError(e, vm, `data()`) /// ???
   } finally {
     popTarget()
+  }
+}
+
+function initComputed(vm: Component, computed: Object) {}
+
+function initWatch(vm: Component, watch: Object) {
+  for (const key in watch) {
+    const handler = watch[key]
+    // ？？？ Array
+    if (Array.isArray(handler)) {
+      for (let i = 0; i < handler.length; i++) {
+        createWatcher(vm, key, handler[i])
+      }
+    } else {
+      createWatcher(vm, key, handler)
+    }
+  }
+}
+
+
+function createWatcher(
+  vm: Component,
+  expOrFn: string | Function,
+  handler: any,
+  options ? : Object
+) {
+  if (isPlainObject(handler)) {
+    /// ???
+    options = handler
+    handler = handler.handler
+  }
+  if (typeof handler === 'string') {
+    handler = vm[handler]
+  }
+  return vm.$watch(expOrFn, handler, options)
+}
+
+
+export function stateMixin(Vue: Class < Component > ) {
+  Vue.prototype.$watch = function (
+    expOrFn: string | Function,
+    cb: any,
+    options ? : Object
+  ): Function {
+    const vm: Component = this
+    if (isPlainObject(cb)) {
+      return createWatcher(vm, expOrFn, cb, options)
+    }
+    options = options || {}
+    options.user = true
+    // console.log(cb)
+    const watcher = new Watcher(vm, expOrFn, cb, options)
   }
 }
